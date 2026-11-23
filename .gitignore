@@ -1,0 +1,27 @@
+
+# Credenciales y secretos
+credentials.json
+credentials*.json
+token.json
+token*.json
+.env
+.env.*
+!.env.example
+
+# Bases de datos con información personal
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Entornos virtuales
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+
+# Archivos temporales
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,105 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Bandeja | PostulaAI{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div class="eyebrow">COMUNICACIONES</div>
+    <h1>Bandeja inteligente</h1>
+    <p>Centraliza las respuestas de empresas, invitaciones a entrevistas y solicitudes de información.</p>
+</div>
+
+<div class="panel" style="padding: 24px; margin-bottom: 24px;">
+
+    {% if gmail_connected %}
+
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+            <div>
+                <h2 style="margin-bottom:6px;">Gmail conectado</h2>
+                <p style="margin:0;">Tu cuenta está autorizada para consultar correos.</p>
+                <span class="soft-tag">Conexión activa</span>
+            </div>
+
+            <form method="POST" action="{{ url_for('gmail_sync') }}">
+                <button type="submit" class="btn btn-primary">
+                    Sincronizar correos
+                </button>
+            </form>
+        </div>
+
+    {% else %}
+
+        <div class="inbox-empty">
+            <div class="inbox-icon">✉</div>
+            <h2>Conecta tu cuenta de Gmail</h2>
+            <p>
+                Autoriza a PostulaAI para consultar tus correos
+                y detectar respuestas relacionadas con tus postulaciones.
+            </p>
+
+            <a href="{{ url_for('gmail_connect') }}" class="btn btn-primary">
+                Conectar Gmail
+            </a>
+        </div>
+
+    {% endif %}
+
+</div>
+
+<div class="panel" style="padding:24px;">
+
+    <h2>Correos recibidos</h2>
+
+    {% if items %}
+
+        <div style="display:flex; flex-direction:column; gap:16px; margin-top:20px;">
+
+            {% for item in items %}
+
+                <div style="padding:16px; border:1px solid var(--border-color, #ddd); border-radius:12px;">
+
+                    <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+
+                        <strong>{{ item.subject }}</strong>
+
+                        <span class="soft-tag">
+                            {{ item.category }}
+                        </span>
+
+                    </div>
+
+                    <p style="margin:8px 0;">
+                        <strong>De:</strong> {{ item.sender }}
+                    </p>
+
+                    <p style="margin:8px 0;">
+                        {{ item.body_preview }}
+                    </p>
+
+                    <small>
+                        {{ item.provider }} ·
+                        {{ item.received_at.strftime('%d-%m-%Y %H:%M') if item.received_at else '' }}
+                    </small>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="inbox-empty">
+            <p>Aún no hay correos importados.</p>
+            {% if gmail_connected %}
+                <p>Presiona «Sincronizar correos» para consultar tu bandeja.</p>
+            {% endif %}
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

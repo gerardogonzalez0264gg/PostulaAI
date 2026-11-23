@@ -1,0 +1,201 @@
+
+{% extends 'base.html' %}
+{% block title %}Postulación | PostulaAI{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div class="eyebrow">POSTULACIÓN LABORAL</div>
+    <h1>{{ offer.title }}</h1>
+    <p>{{ offer.company or 'Empresa no indicada' }}</p>
+</div>
+
+<div class="panel">
+
+    <h2>Información de la oferta</h2>
+
+    <form method="POST" action="{{ url_for('update_offer', offer_id=offer.id) }}">
+
+        <div class="mb-3">
+            <label class="form-label">Cargo</label>
+            <input class="form-control" type="text" name="title"
+                   value="{{ offer.title }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Empresa</label>
+            <input class="form-control" type="text" name="company"
+                   value="{{ offer.company or '' }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Enlace de postulación</label>
+            <input class="form-control" type="url" name="url"
+                   value="{{ offer.url or '' }}"
+                   placeholder="https://...">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Ubicación</label>
+            <input class="form-control" type="text" name="location"
+                   value="{{ offer.location or '' }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Modalidad</label>
+            <select class="form-select" name="work_mode">
+                {% for mode in ['Presencial', 'Híbrido', 'Remoto', 'No especificado'] %}
+                <option value="{{ mode }}"
+                    {% if offer.work_mode == mode %}selected{% endif %}>
+                    {{ mode }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-outline-primary">
+            Guardar información
+        </button>
+
+    </form>
+
+    {% if offer.url %}
+    <a href="{{ offer.url }}" target="_blank"
+       rel="noopener noreferrer"
+       class="btn btn-primary mt-3">
+        Abrir oferta y completar postulación ↗
+    </a>
+    {% endif %}
+
+</div>
+
+
+<div class="panel mt-3">
+
+    <h2>1. Descripción del trabajo</h2>
+
+    {% if offer.analysis and analysis_data %}
+        <p>{{ analysis_data.description }}</p>
+    {% elif offer.analysis %}
+        <p>{{ legacy_analysis }}</p>
+        <p class="text-muted">
+            Este análisis pertenece a una versión anterior.
+            Puedes actualizarlo para utilizar el nuevo formato.
+        </p>
+    {% else %}
+        <p>Aún no hay una descripción generada.</p>
+    {% endif %}
+
+    <form method="POST"
+          action="{{ url_for('reanalyze_offer', offer_id=offer.id) }}">
+        <button type="submit" class="btn btn-outline-primary mt-2">
+            Actualizar descripción
+        </button>
+    </form>
+
+</div>
+
+
+<div class="panel mt-3">
+
+    <h2>2. Respuestas para la postulación</h2>
+
+    <p class="text-muted">
+        Pega las preguntas que aparecen en el formulario de la empresa.
+    </p>
+
+    <form method="POST"
+          action="{{ url_for('generate_answers', offer_id=offer.id) }}">
+
+        <div class="mb-3">
+            <label class="form-label">Preguntas del formulario</label>
+            <textarea class="form-control"
+                      name="questions"
+                      rows="5"
+                      placeholder="1. ¿Por qué te interesa este puesto?&#10;2. ¿Cuál es tu experiencia relacionada?"
+                      required>{{ offer.form_questions or '' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Generar respuestas
+        </button>
+
+    </form>
+
+    {% if answers %}
+
+        <hr>
+
+        <h3>Respuestas generadas</h3>
+
+        {% for item in answers %}
+        <div class="mb-4">
+
+            <label class="form-label">
+                <strong>{{ loop.index }}. {{ item.question }}</strong>
+            </label>
+
+            <textarea class="form-control"
+                      id="answer-{{ loop.index }}"
+                      rows="4">{{ item.answer }}</textarea>
+
+            <button type="button"
+                    class="btn btn-outline-primary btn-sm mt-2"
+                    onclick="copyAnswer('answer-{{ loop.index }}', this)">
+                Copiar respuesta
+            </button>
+
+        </div>
+        {% endfor %}
+
+    {% endif %}
+
+</div>
+
+
+<div class="panel mt-3">
+
+    <h2>3. Recomendación honesta</h2>
+
+    {% if analysis_data %}
+        {% if analysis_data.recommendation == 'SI' %}
+            <span class="badge bg-success fs-6">
+                SÍ, RECOMIENDO POSTULAR
+            </span>
+        {% else %}
+            <span class="badge bg-danger fs-6">
+                NO, NO RECOMIENDO POSTULAR
+            </span>
+        {% endif %}
+    {% else %}
+        <p>Actualiza el análisis para obtener una recomendación.</p>
+    {% endif %}
+
+</div>
+
+
+<a href="{{ url_for('offers') }}" class="btn btn-outline-primary mt-3">
+    Volver a ofertas
+</a>
+
+
+<script>
+function copyAnswer(id, button) {
+    const textarea = document.getElementById(id);
+
+    navigator.clipboard.writeText(textarea.value).then(() => {
+        const originalText = button.textContent;
+        button.textContent = "¡Copiado!";
+
+        setTimeout(() => {
+            button.textContent = originalText;
+        }, 1800);
+    }).catch(() => {
+        textarea.select();
+        document.execCommand("copy");
+        button.textContent = "¡Copiado!";
+    });
+}
+</script>
+
+{% endblock %}

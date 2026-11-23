@@ -1,0 +1,607 @@
+
+{% extends 'base.html' %}
+{% block title %}Ofertas laborales | PostulaAI{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div class="eyebrow">OPORTUNIDADES LABORALES</div>
+    <h1>Ofertas laborales</h1>
+    <p>Encuentra oportunidades o analiza una oferta que ya tengas.</p>
+</div>
+
+{% set current_mode = mode|default('search') %}
+
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="{{ url_for('offers', mode='search') }}"
+       class="btn {% if current_mode == 'search' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        Buscar ofertas
+    </a>
+
+    <a href="{{ url_for('offers', mode='analyze') }}"
+       class="btn {% if current_mode == 'analyze' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        Analizar una oferta
+    </a>
+</div>
+
+<!-- BUSCADOR DE OFERTAS -->
+{% if current_mode == 'search' %}
+<div class="panel mb-4">
+
+    <h2>1. Buscar ofertas laborales</h2>
+
+    <p class="text-muted">
+        Busca oportunidades según el cargo, región, comuna y modalidad.
+    </p>
+
+    <form method="POST" action="{{ url_for('search_offers') }}">
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <label class="form-label">Cargo o palabra clave *</label>
+                <input type="text" name="role" class="form-control"
+                       placeholder="Ej. Analista de ciberseguridad" required>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Región</label>
+                <select name="location" class="form-select">
+                    <option value="">Todas las regiones</option>
+                    <option value="Arica y Parinacota">Arica y Parinacota</option>
+                    <option value="Tarapacá">Tarapacá</option>
+                    <option value="Antofagasta">Antofagasta</option>
+                    <option value="Atacama">Atacama</option>
+                    <option value="Coquimbo">Coquimbo</option>
+                    <option value="Valparaíso">Valparaíso</option>
+                    <option value="Metropolitana">Región Metropolitana</option>
+                    <option value="O'Higgins">O'Higgins</option>
+                    <option value="Maule">Maule</option>
+                    <option value="Ñuble">Ñuble</option>
+                    <option value="Biobío">Biobío</option>
+                    <option value="La Araucanía">La Araucanía</option>
+                    <option value="Los Ríos">Los Ríos</option>
+                    <option value="Los Lagos">Los Lagos</option>
+                    <option value="Aysén">Aysén</option>
+                    <option value="Magallanes">Magallanes</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Comuna</label>
+                <input type="text" name="commune" class="form-control"
+                       placeholder="Ej. Chimbarongo">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Modalidad</label>
+                <select name="work_mode" class="form-select">
+                    <option value="">Todas</option>
+                    <option value="Remoto">Remoto</option>
+                    <option value="Híbrido">Híbrido</option>
+                    <option value="Presencial">Presencial</option>
+                </select>
+            </div>
+
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">
+            Buscar ofertas
+        </button>
+
+    </form>
+
+    {% if search_error %}
+        <div class="alert alert-warning mt-3">
+            {{ search_error }}
+        </div>
+    {% endif %}
+
+    {% if search_results %}
+
+        <hr>
+
+        <h3>Resultados encontrados</h3>
+
+        <p class="small text-muted">
+            Revisa cada publicación en su portal original antes de postular.
+        </p>
+
+        {% for item in search_results %}
+
+            <div class="list-row">
+                <div class="w-100">
+
+                    <strong>{{ item.title }}</strong>
+
+                    <div class="mt-2 mb-2">
+                        <span class="soft-tag">Portal: {{ item.source }}</span>
+                        <span class="soft-tag">{{ item.result_type }}</span>
+                    </div>
+
+                    {% if item.description %}
+                        <p class="small text-muted mb-2">
+                            {{ item.description }}
+                        </p>
+                    {% else %}
+                        <p class="small text-muted mb-2">
+                            Sin descripción disponible en los resultados.
+                        </p>
+                    {% endif %}
+
+                    <a href="{{ item.url }}" target="_blank"
+                       rel="noopener noreferrer">
+                        Abrir publicación original ↗
+                    </a>
+
+                    <form method="POST"
+                        action="{{ url_for('delete_search_result', result_id=item.id) }}"
+                        class="mt-2"
+                        onsubmit="return confirm('¿Deseas eliminar este resultado de búsqueda?');">
+
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            Eliminar resultado
+                        </button>
+
+                    </form>
+
+                    <div class="d-flex flex-wrap gap-3 mt-3">
+
+                        <form method="POST"
+                              action="{{ url_for('update_search_result_tracking',
+                              result_id=item.id, field='ya_revise') }}">
+
+                            <input type="checkbox"
+                                   id="search_reviewed_{{ item.id }}"
+                                   {% if item.ya_revise %}checked{% endif %}
+                                   onchange="updateTracking(this)">
+
+                            <input type="hidden" name="checked"
+                                   value="{{ 'true' if item.ya_revise else 'false' }}">
+
+                            <label for="search_reviewed_{{ item.id }}">
+                                Ya revisé
+                            </label>
+                        </form>
+
+                        <form method="POST"
+                              action="{{ url_for('update_search_result_tracking',
+                              result_id=item.id, field='ya_postule') }}">
+
+                            <input type="checkbox"
+                                   id="search_applied_{{ item.id }}"
+                                   {% if item.ya_postule %}checked{% endif %}
+                                   onchange="updateTracking(this)">
+
+                            <input type="hidden" name="checked"
+                                   value="{{ 'true' if item.ya_postule else 'false' }}">
+
+                            <label for="search_applied_{{ item.id }}">
+                                Ya postulé
+                            </label>
+                        </form>
+
+                    </div>
+
+                </div>
+            </div>
+
+        {% endfor %}
+
+        <div class="alert alert-info mt-3">
+            Los resultados provienen de búsquedas externas. Comprueba
+            su vigencia en el portal original.
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endif %}
+
+
+<!-- ANALIZAR OFERTA -->
+{% if current_mode == 'analyze' %}
+
+<div class="panel mb-4">
+
+    <h2>2. Asistente de postulación</h2>
+
+    <p class="text-muted">
+        Escribe los datos del cargo y agrega las preguntas del formulario.
+        La IA utilizará tu perfil profesional para preparar las respuestas.
+    </p>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-6">
+            <label class="form-label">Cargo al que postulas *</label>
+            <input type="text" id="applicationTitle"
+                   class="form-control"
+                   placeholder="Ej. Analista de datos">
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Empresa</label>
+            <input type="text" id="applicationCompany"
+                   class="form-control"
+                   placeholder="Nombre de la empresa">
+        </div>
+
+    </div>
+
+<!-- NUEVO CAMPO -->
+<div class="mt-3">
+    <label class="form-label">Contexto de la oferta laboral</label>
+    <textarea
+        id="applicationContext"
+        class="form-control"
+        rows="5"
+        placeholder="Pega aquí los requisitos, experiencia, conocimientos y responsabilidades que solicita la empresa..."
+    ></textarea>
+    <small class="text-muted">
+        La IA utilizará esta información junto con tu perfil profesional
+        para adaptar las respuestas.
+    </small>
+</div>
+
+<hr>
+
+
+    <hr>
+
+    <h3>Preguntas del formulario</h3>
+
+    <p class="text-muted">
+        Agrega las preguntas que aparecen durante tu postulación.
+        Cada una tendrá su propia respuesta.
+    </p>
+
+    <div id="questionsContainer"></div>
+
+    <button type="button" class="btn btn-outline-primary mt-3"
+            id="addQuestionButton">
+        <i class="bi bi-plus-circle"></i>
+        Agregar pregunta
+    </button>
+
+    <hr class="my-4">
+
+    <button type="button" class="btn btn-success"
+            id="registerApplicationButton">
+        <i class="bi bi-check-circle"></i>
+        Ya postulé
+    </button>
+
+    <div id="applicationMessage" class="mt-3"></div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const container = document.getElementById("questionsContainer");
+    const addButton = document.getElementById("addQuestionButton");
+    const registerButton = document.getElementById("registerApplicationButton");
+    const message = document.getElementById("applicationMessage");
+
+    let questionCount = 0;
+
+    function addQuestion() {
+        questionCount++;
+
+        const card = document.createElement("div");
+        card.className = "border rounded p-3 mt-3";
+
+        const heading = document.createElement("h5");
+        heading.textContent = "Pregunta " + questionCount;
+
+        const questionInput = document.createElement("textarea");
+        questionInput.className = "form-control mb-3";
+        questionInput.rows = 3;
+        questionInput.placeholder = "Escribe aquí la pregunta...";
+
+        const generateButton = document.createElement("button");
+        generateButton.type = "button";
+        generateButton.className = "btn btn-primary btn-sm";
+        generateButton.textContent = "Generar respuesta";
+
+        const answerLabel = document.createElement("label");
+        answerLabel.className = "form-label mt-3";
+        answerLabel.textContent = "Respuesta generada";
+
+        const answerInput = document.createElement("textarea");
+        answerInput.className = "form-control mb-2";
+        answerInput.rows = 4;
+        answerInput.readOnly = false;
+        answerInput.style.display = "none";
+
+        const copyButton = document.createElement("button");
+        copyButton.type = "button";
+        copyButton.className = "btn btn-outline-secondary btn-sm";
+        copyButton.textContent = "Copiar respuesta";
+        copyButton.style.display = "none";
+
+        const errorMessage = document.createElement("p");
+        errorMessage.className = "text-danger small mt-2";
+
+        generateButton.addEventListener("click", async function () {
+
+            const question = questionInput.value.trim();
+
+            if (!question) {
+                errorMessage.textContent = "Escribe una pregunta primero.";
+                return;
+            }
+
+            generateButton.disabled = true;
+            generateButton.textContent = "Generando respuesta...";
+            errorMessage.textContent = "";
+
+            try {
+                const response = await fetch(
+                    "{{ url_for('generate_individual_answer') }}",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            question: question,
+                            title: document.getElementById("applicationTitle").value.trim(),
+                            company: document.getElementById("applicationCompany").value.trim(),
+                            context: document.getElementById("applicationContext").value.trim()
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || "No se pudo generar la respuesta.");
+                }
+
+                answerInput.value = data.answer;
+                answerInput.style.display = "block";
+                answerLabel.style.display = "block";
+                copyButton.style.display = "inline-block";
+
+            } catch (error) {
+                errorMessage.textContent = error.message;
+            } finally {
+                generateButton.disabled = false;
+                generateButton.textContent = "Generar respuesta";
+            }
+        });
+
+        copyButton.addEventListener("click", async function () {
+            try {
+                await navigator.clipboard.writeText(answerInput.value);
+                copyButton.textContent = "¡Copiado!";
+            } catch (error) {
+                answerInput.select();
+                document.execCommand("copy");
+                copyButton.textContent = "¡Copiado!";
+            }
+
+            setTimeout(function () {
+                copyButton.textContent = "Copiar respuesta";
+            }, 1800);
+        });
+
+        answerLabel.style.display = "none";
+
+        card.append(
+            heading,
+            questionInput,
+            generateButton,
+            errorMessage,
+            answerLabel,
+            answerInput,
+            copyButton
+        );
+
+        container.appendChild(card);
+    }
+
+    addButton.addEventListener("click", addQuestion);
+
+    // Mostrar una primera pregunta al abrir la sección.
+    addQuestion();
+
+    registerButton.addEventListener("click", async function () {
+
+        const title = document.getElementById("applicationTitle").value.trim();
+        const company = document.getElementById("applicationCompany").value.trim();
+
+        if (!title) {
+            message.textContent = "Debes indicar el cargo al que postulaste.";
+            message.className = "text-danger mt-3";
+            return;
+        }
+
+        registerButton.disabled = true;
+        registerButton.textContent = "Registrando...";
+
+        try {
+            const response = await fetch(
+                "{{ url_for('register_analyzed_application') }}",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        company: company
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || "No se pudo registrar la postulación.");
+            }
+
+            message.textContent = "¡Postulación registrada! Ya aparece en tu historial.";
+            message.className = "alert alert-success mt-3";
+
+            registerButton.textContent = "Postulación registrada";
+
+            setTimeout(function () {
+                window.location.href = "{{ url_for('offers') }}";
+            }, 1200);
+
+        } catch (error) {
+            message.textContent = error.message;
+            message.className = "text-danger mt-3";
+            registerButton.disabled = false;
+            registerButton.textContent = "Ya postulé";
+        }
+    });
+
+});
+</script>
+
+{% endif %}
+
+
+<!-- HISTORIAL DE POSTULACIONES -->
+<div class="panel mt-4">
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+        <div>
+            <h2>Historial de postulaciones</h2>
+            <p class="text-muted mb-0">
+                Aquí encontrarás las ofertas que marcaste como postuladas.
+            </p>
+        </div>
+
+        <button
+            class="btn btn-primary"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#applicationHistory"
+            aria-expanded="false"
+            aria-controls="applicationHistory">
+
+            <i class="bi bi-briefcase"></i>
+            Ver mis postulaciones
+
+        </button>
+
+    </div>
+
+    <div class="collapse mt-4" id="applicationHistory">
+
+        {% if applied_offers or applied_search_results %}
+
+            <h3 class="mb-3">Ofertas guardadas</h3>
+
+            {% for offer in applied_offers %}
+
+                <div class="list-row">
+
+                    <div class="w-100">
+
+                        <a href="{{ url_for('offer_detail', offer_id=offer.id) }}">
+                            <strong>{{ offer.title }}</strong>
+                        </a>
+
+                        <small class="d-block text-muted">
+                            {{ offer.company or 'Empresa no indicada' }}
+                            · {{ offer.source }}
+                        </small>
+
+                        <form method="POST"
+                              action="{{ url_for('update_offer_tracking', offer_id=offer.id, field='ya_postule') }}">
+
+                            <input type="checkbox"
+                                   id="history_offer_{{ offer.id }}"
+                                   checked
+                                   onchange="updateTracking(this)">
+
+                            <input type="hidden"
+                                   name="checked"
+                                   value="true">
+
+                            <label for="history_offer_{{ offer.id }}">
+                                Ya postulé
+                            </label>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+            <h3 class="mt-4 mb-3">Ofertas encontradas en el buscador</h3>
+
+            {% for item in applied_search_results %}
+
+                <div class="list-row">
+
+                    <div class="w-100">
+
+                        <strong>{{ item.title }}</strong>
+
+                        <small class="d-block text-muted">
+                            Portal: {{ item.source }}
+                        </small>
+
+                        <a href="{{ item.url }}"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            Abrir publicación original ↗
+                        </a>
+
+                        <form method="POST"
+                              action="{{ url_for('update_search_result_tracking', result_id=item.id, field='ya_postule') }}">
+
+                            <input type="checkbox"
+                                   id="history_search_{{ item.id }}"
+                                   checked
+                                   onchange="updateTracking(this)">
+
+                            <input type="hidden"
+                                   name="checked"
+                                   value="true">
+
+                            <label for="history_search_{{ item.id }}">
+                                Ya postulé
+                            </label>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p class="empty-state">
+                Todavía no tienes ofertas marcadas como postuladas.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<script>
+function updateTracking(checkbox) {
+    const hidden = checkbox.form.querySelector('input[name="checked"]');
+    hidden.value = checkbox.checked ? "true" : "false";
+    checkbox.form.submit();
+}
+</script>
+
+{% endblock %}

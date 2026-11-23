@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block title %}Dashboard | PostulaAI{% endblock %}{% block content %}
+<div class="hero"><div><div class="eyebrow">CENTRO DE OPERACIONES LABORALES</div><h1>Bienvenido a PostulaAI</h1><p>Organiza tus oportunidades y prepara mejores postulaciones con ayuda de IA.</p></div><a class="btn btn-light" href="{{ url_for('offers') }}">＋ Analizar una oferta</a></div>
+<div class="row g-3 mt-2">
+<div class="col-md-4"><div class="stat-card"><span>Ofertas guardadas</span><strong>{{ offer_count }}</strong><small>Oportunidades analizadas</small></div></div>
+<div class="col-md-4"><div class="stat-card"><span>Postulaciones</span><strong>{{ application_count }}</strong><small>Procesos registrados</small></div></div>
+<div class="col-md-4"><div class="stat-card"><span>Mensajes</span><strong>{{ inbox_count }}</strong><small>En tu bandeja inteligente</small></div></div>
+</div>
+<div class="row g-3 mt-2"><div class="col-lg-7"><div class="panel"><div class="panel-heading"><h2>Ofertas recientes</h2><a href="{{ url_for('offers') }}">Ver todas</a></div>{% for offer in offers %}<div class="list-row"><div><strong>{{ offer.title }}</strong><small>{{ offer.company or 'Empresa no indicada' }} · {{ offer.source }}</small></div><span class="soft-tag">Guardada</span></div>{% else %}<p class="empty-state">Todavía no tienes ofertas. Agrega un enlace y pega la descripción para comenzar.</p>{% endfor %}</div></div>
+<div class="col-lg-5"><div class="panel"><div class="panel-heading"><h2>Accesos rápidos</h2></div><a class="quick-link" href="{{ url_for('profile') }}">♙ <span><strong>Completar mi perfil</strong><small>Prepara la información que usará la IA.</small></span> →</a><a class="quick-link" href="{{ url_for('applications') }}">▤ <span><strong>Registrar postulación</strong><small>Actualiza el estado de un proceso.</small></span> →</a><a class="quick-link" href="{{ url_for('inbox') }}">✉ <span><strong>Revisar bandeja</strong><small>Prepara la integración de correo.</small></span> →</a></div></div></div>
+{% endblock %}
