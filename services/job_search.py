@@ -1,4 +1,3 @@
-
 from urllib.parse import quote_plus, urlparse
 
 from playwright.sync_api import (
